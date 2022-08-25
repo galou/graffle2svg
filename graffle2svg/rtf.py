@@ -13,7 +13,7 @@
 
 import re
 
-from styles import CascadingStyles
+from .styles import CascadingStyles
 
 def isint(i):
     try:

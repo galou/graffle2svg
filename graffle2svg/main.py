@@ -11,15 +11,15 @@
 
 #THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from io import BufferedReader
+from typing import Dict, Union
 import xml.dom.minidom
 
-from rtf import extractRTFString
-from styles import CascadingStyles
-import geom
-import fileinfo
+from .rtf import extractRTFString
+from .styles import CascadingStyles
+from . import geom
+from . import fileinfo
 
-
-        
 
 class GraffleParser(object):
 
@@ -28,10 +28,13 @@ class GraffleParser(object):
 		self.g_dom = None
 
 
-	def walkGraffleFile(self,filename):
+	def walkGraffleFile(self, filename: Union[str, BufferedReader]) -> Dict:
 		import plistlib
-		with open(filename, 'rb') as fp:
-			self.doc_dict = plistlib.load(fp)
+		if isinstance(filename, BufferedReader):
+			self.doc_dict = plistlib.load(filename)
+		else:
+			with open(filename, 'rb') as fp:
+				self.doc_dict = plistlib.load(fp)
 		if self.doc_dict is None:
 			raise Exception('File not found or not Plist format')
 		return self.doc_dict
