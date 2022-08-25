@@ -28,108 +28,109 @@ def get_options():
    or: %prog [options] --display
    or: %prog [options] --stdout SOURCE
    or: %prog [options] --stdout"""
-    
+
     parser = OptionParser(usage=usage)
-    parser.add_option("-c", "--stdout", dest="stdout", 
-                        help="write converted SVG to stdout", 
-                        action="store_true")
-    parser.add_option("-d", "--display", dest="display", 
-                        help="display the file using default svg viewer. Output is ignored", 
-                        action="store_true")
-    parser.add_option("-e", "--extract", dest="area", action="store", type="string",
-                      help="extract the area given by ((x1,y1),(x2,y2))")
-    parser.add_option("-p", "--page", dest="page", 
-                        help="for multi-page documents, page number to extract")
-    parser.add_option("-v", "--verbose", dest="verbose", 
-                        help="verbose", 
-                        action="store_true")
-                        
-    
-    (options, args) = parser.parse_args()
+    parser.add_option('-c', '--stdout', dest='stdout',
+                      help='write converted SVG to stdout',
+                      action='store_true')
+    parser.add_option('-d', '--display', dest='display',
+                      help='display the file using default svg viewer. Output is ignored',
+                      action='store_true')
+    parser.add_option('-e', '--extract', dest='area', action='store',
+                      type='string',
+                      help='extract the area given by ((x1,y1),(x2,y2))')
+    parser.add_option('-p', '--page', dest='page',
+                      help='for multi-page documents, page number to extract')
+    parser.add_option('-v', '--verbose', dest='verbose',
+                      help='verbose',
+                      action='store_true')
+
+    options, args = parser.parse_args()
     # set up rest of options
     optsdict = {}
-    optsdict["stdin"] = False
-    
-    if options.stdout == True:
+    optsdict['stdin'] = False
+
+    if options.stdout:
         if len(args) > 1:
-            parser.error("Too many arguments")
+            parser.error('Too many arguments')
         elif len(args) == 0:
-            optsdict["stdin"] = True
+            optsdict['stdin'] = True
         else:
-            optsdict["infile"] = args[0]
+            optsdict['infile'] = args[0]
     else:
         if len(args) > 2:
-            parser.error("Too many arguments")
-        elif len(args) == 0 and not (options.display == True):
-            parser.error("Too few arguments")
+            parser.error('Too many arguments')
+        elif len(args) == 0 and not options.display:
+            parser.error('Too few arguments')
         elif len(args) == 1:
             if options.display == True:
                 # don't accept outfile for display
-                optsdict["infile"] = args[0]
+                optsdict['infile'] = args[0]
             else:
                 #stdin
-                optsdict["stdin"] = True
-                optsdict["outfile"] = args[0]
+                optsdict['stdin'] = True
+                optsdict['outfile'] = args[0]
         elif len(args) == 2:
-            optsdict["infile"] = args[0]
-            optsdict["outfile"] = args[1]
+            optsdict['infile'] = args[0]
+            optsdict['outfile'] = args[1]
 
         if options.area:
             try:
-                optsdict["area"] = eval(options.area)
+                optsdict['area'] = eval(options.area)
             except:
                 raise Exception('area not correct')
         else:
-            optsdict["area"] = None
+            optsdict['area'] = None
     return(optsdict, options)
-    
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
 
     optsdict, options = get_options()
-    
-    import sys, tempfile
-    import subprocess, os
-    
+
+    import os
+    import subprocess
+    import tempfile
+
     gp = GraffleParser()
     gi = GraffleInterpreter()
-    svgTarget = TargetSvg()
-    gi.setTarget(svgTarget)
-    
-    graffle_data = ""
-    if optsdict["stdin"]:
+    svg_target = TargetSvg()
+    gi.set_target(svg_target)
+
+    graffle_data = ''
+    if optsdict['stdin']:
         graffle_data = sys.stdin.read()
-        gi.dict = GraffleParser().walkGraffle(graffle_data)
+        gi.dict = GraffleParser().walk_graffle(graffle_data)
     else:
         import graffle2svg.filepack as filepack
-        grafflefilepack = filepack.GraffleFilePack(optsdict["infile"])
-        gi.dict = GraffleParser().walkGraffleFile(grafflefilepack.fileObject)
+        grafflefilepack = filepack.GraffleFilePack(optsdict['infile'])
+        gi.dict = GraffleParser().walk_graffle_file(grafflefilepack.fileObject)
         grafflefilepack.close()
 
-    try:        
+    try:
         page = int(options.page)
-        gi.extractPage(page=page, bounding_box=optsdict["area"])
+        gi.extract_page(page=page, bounding_box=optsdict['area'])
     except:
-        gi.extractPage()
-    
-    
+        gi.extract_page()
+
+
     if options.display == True:
         # write a temp file and open that
-        outfile, filename = tempfile.mkstemp(suffix=".svg")
-        f = open(filename,"wb")
+        outfile, filename = tempfile.mkstemp(suffix='.svg')
+        f = open(filename,'wb')
         f.write(gi.target.svg)
         f.close()
         if os.name == 'mac':
             subprocess.call(('open', filename))
         elif os.name == 'nt':
             subprocess.call(('start', filename))
-        elif os.name == "posix":
+        elif os.name == 'posix':
             subprocess.call(('xdg-open', filename))
 
     elif options.stdout == True:
         #print to stdout
         sys.stdout.buffer.write(gi.target.svg)
     else:
-        f = open(optsdict["outfile"],"wb")
+        f = open(optsdict['outfile'],'wb')
         f.write(gi.target.svg)
         f.close()
